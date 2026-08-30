@@ -17,42 +17,41 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { apiService } from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<any>({
-    verified_count: 142,
-    collision_count: 7,
-    pending_count: 13,
-    tamper_count: 3,
-    total_audited: 165,
-    avg_confidence: 94.2,
-    spatial_accuracy: '99.8%',
-    blockchain_health: '100% (Polygon Testnet Active)'
-  });
+  const { hasRole } = useAuth();
+  // No hardcoded/mock starting values: null means "not yet loaded from the backend".
+  const [stats, setStats] = useState<any>(null);
+  const [statsError, setStatsError] = useState<string | null>(null);
 
   const [recentList, setRecentList] = useState<any[]>([]);
+  const [recentListError, setRecentListError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [statsData, listData] = await Promise.all([
-        apiService.getStatsSummary().catch(() => null),
-        apiService.getRecentVerifications().catch(() => []),
+      setStatsError(null);
+      setRecentListError(null);
+
+      const [statsResult, listResult] = await Promise.allSettled([
+        apiService.getStatsSummary(),
+        apiService.getRecentVerifications(),
       ]);
-      if (statsData) setStats(statsData);
-      if (listData && listData.length > 0) {
-        setRecentList(listData);
+
+      if (statsResult.status === 'fulfilled') {
+        setStats(statsResult.value);
       } else {
-        // Fallback default mock items
-        setRecentList([
-          { verification_id: 'PP-2026-00142', survey_number: '142/3A', district: 'Chennai', area_sqft: 2400, status: 'VERIFIED', confidence_score: 98.5 },
-          { verification_id: 'PP-2026-00141', survey_number: '142/3B', district: 'Chennai', area_sqft: 2400, status: 'SPATIAL_COLLISION', confidence_score: 45.0 },
-          { verification_id: 'PP-2026-00140', survey_number: '142/2', district: 'Chennai', area_sqft: 4800, status: 'VERIFIED', confidence_score: 97.2 },
-          { verification_id: 'PP-2026-00139', survey_number: '142/1', district: 'Chennai', area_sqft: 2400, status: 'VERIFIED', confidence_score: 99.0 },
-          { verification_id: 'PP-2026-00138', survey_number: '142/4', district: 'Chennai', area_sqft: 2400, status: 'MANUAL_REVIEW', confidence_score: 68.0 },
-          { verification_id: 'PP-2026-00137', survey_number: '142/3A', district: 'Chennai', area_sqft: 3400, status: 'TAMPER_ALERT', confidence_score: 35.0 },
-        ]);
+        setStats(null);
+        setStatsError('Statistics service is currently unavailable.');
+      }
+
+      if (listResult.status === 'fulfilled') {
+        setRecentList(listResult.value || []);
+      } else {
+        setRecentList([]);
+        setRecentListError('Recent verifications could not be loaded.');
       }
     } catch (e) {
       console.error(e);
@@ -128,6 +127,13 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {statsError && (
+        <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span>{statsError} Figures below are omitted rather than estimated.</span>
+        </div>
+      )}
+
       {/* 4 Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
@@ -140,9 +146,9 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-3xl font-black text-white">{stats.verified_count}</div>
+            <div className="text-3xl font-black text-white">{stats ? stats.verified_count : '—'}</div>
             <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1 font-medium">
-              <span>✓ 0 collisions & hash matched</span>
+              <span>Passed integrity, GIS &amp; OCR checks</span>
             </p>
           </div>
         </div>
@@ -156,9 +162,9 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-3xl font-black text-white">{stats.collision_count}</div>
+            <div className="text-3xl font-black text-white">{stats ? stats.collision_count : '—'}</div>
             <p className="text-xs text-red-400 mt-1 flex items-center gap-1 font-medium">
-              <span>⚠ Overlaps intercepted</span>
+              <span>Overlaps intercepted</span>
             </p>
           </div>
         </div>
@@ -172,7 +178,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-3xl font-black text-white">{stats.pending_count}</div>
+            <div className="text-3xl font-black text-white">{stats ? stats.pending_count : '—'}</div>
             <p className="text-xs text-amber-400 mt-1 font-medium">
               <span>Awaiting manual surveyor signoff</span>
             </p>
@@ -188,7 +194,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-3xl font-black text-white">{stats.tamper_count}</div>
+            <div className="text-3xl font-black text-white">{stats ? stats.tamper_count : '—'}</div>
             <p className="text-xs text-purple-300 mt-1 font-medium">
               <span>SHA-256 Hash Mismatches</span>
             </p>
@@ -214,6 +220,17 @@ export default function DashboardPage() {
           </div>
 
           <div className="overflow-x-auto">
+            {recentListError && (
+              <div className="p-3 m-4 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>{recentListError}</span>
+              </div>
+            )}
+            {!recentListError && !loading && recentList.length === 0 && (
+              <div className="p-8 text-center text-xs text-slate-500">
+                No verifications have been run yet. Upload a deed to see it appear here.
+              </div>
+            )}
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-900/80 text-slate-400 uppercase font-mono text-[10px] border-b border-slate-800">
                 <tr>
@@ -248,21 +265,20 @@ export default function DashboardPage() {
                       {item.confidence_score}%
                     </td>
                     <td className="py-3.5 px-4 text-center">
-                      <div className="flex items-center justify-center space-x-2">
-                        {(item.status === 'SPATIAL_COLLISION' || item.status === 'REVIEW_REQUIRED' || item.status === 'MANUAL_REVIEW') ? (
+                      <div className="flex items-center justify-center gap-3">
+                        <Link
+                          href={`/verification/${item.verification_id}`}
+                          className="inline-flex items-center text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition"
+                        >
+                          <span>Audit</span>
+                          <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
+                        </Link>
+                        {hasRole('REGISTRAR', 'ADMIN') && (
                           <Link
-                            href={`/verification/${item.verification_id}`}
-                            className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-md bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-bold transition active:scale-95"
-                            title="Perform Sub-Registrar Authority Review on this deed"
+                            href={`/review/${item.verification_id}`}
+                            className="inline-flex items-center text-xs font-semibold text-purple-300 hover:text-purple-200 transition"
                           >
-                            <span>⚡ Authority Verify</span>
-                          </Link>
-                        ) : (
-                          <Link
-                            href={`/verification/${item.verification_id}`}
-                            className="inline-flex items-center text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition"
-                          >
-                            <span>Audit</span>
+                            <span>Review</span>
                             <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
                           </Link>
                         )}
