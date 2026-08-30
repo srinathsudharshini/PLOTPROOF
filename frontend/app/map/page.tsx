@@ -20,6 +20,7 @@ import { MapView } from '@/components/MapView';
 export default function GISMapPage() {
   const [cadastralData, setCadastralData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'collision_demo'>('all');
   const [selectedSurvey, setSelectedSurvey] = useState<string>('142/3A');
 
@@ -27,10 +28,17 @@ export default function GISMapPage() {
     const fetchGISData = async () => {
       try {
         setLoading(true);
+        setLoadError(null);
         const data = await apiService.getCadastralLayer();
         setCadastralData(data);
-      } catch (e) {
+      } catch (e: any) {
         console.error(e);
+        setCadastralData(null);
+        setLoadError(
+          e.response
+            ? 'The GIS service returned an error while loading the cadastral layer.'
+            : 'Could not reach the backend GIS service.'
+        );
       } finally {
         setLoading(false);
       }
@@ -112,6 +120,12 @@ export default function GISMapPage() {
         
         {/* Main Map View (3 cols) */}
         <div className="lg:col-span-3 space-y-4">
+          {loadError && (
+            <div className="glass-panel p-4 rounded-xl border border-amber-500/40 bg-amber-950/20 flex items-center gap-3 text-xs text-amber-300">
+              <AlertTriangle className="w-5 h-5 shrink-0" />
+              <span>{loadError} The map below may be showing an empty base layer.</span>
+            </div>
+          )}
           <div className="glass-panel p-2 rounded-2xl border border-slate-800 shadow-2xl">
             <MapView
               cadastralLayer={cadastralData}
