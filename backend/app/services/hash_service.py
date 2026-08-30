@@ -1,8 +1,22 @@
 import hashlib
 import json
-from typing import Dict, Any, Tuple, List
+import re
+from typing import Dict, Any, Tuple, List, Optional
 
 class HashService:
+    @staticmethod
+    def parse_area_value(area_raw: Any) -> float:
+        """
+        Sanitizes and extracts float area value from numerical or string inputs (e.g. '2,400 Sq.ft' -> 2400.0).
+        """
+        if area_raw is None:
+            return 0.0
+        if isinstance(area_raw, (int, float)):
+            return float(area_raw)
+        clean_str = str(area_raw).replace(",", "")
+        m = re.search(r"([\d\.]+)", clean_str)
+        return float(m.group(1)) if m else 0.0
+
     @staticmethod
     def compute_file_sha256(file_path: str) -> str:
         """
@@ -20,17 +34,7 @@ class HashService:
         Produces canonical deterministic JSON string and computes SHA-256 fingerprint.
         Keys are sorted and normalized to guarantee identical hashes for identical data.
         """
-        import re
-        area_val = record.get("area_sqft")
-        if area_val is None:
-            area_str = str(record.get("area", ""))
-            m = re.search(r"([\d\.]+)", area_str)
-            area_val = float(m.group(1)) if m else 0.0
-        else:
-            try:
-                area_val = float(area_val)
-            except Exception:
-                area_val = 0.0
+        area_val = HashService.parse_area_value(record.get("area_sqft") or record.get("area"))
 
         canonical_data = {
             "survey_number": str(record.get("survey_number", "")).strip().upper(),
@@ -52,41 +56,29 @@ class HashService:
     @staticmethod
     def verify_document_integrity(
         current_record: Dict[str, Any],
-        known_registered_hash: str = None
+        registered_baseline: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
-        Verifies if document has been tampered with by comparing canonical hash.
-        For survey 142/3A, baseline genuine record has area 2400 sq.ft.
-        If current record has area 3400 sq.ft, hash mismatch is triggered.
+        Verifies deed authenticity by comparing extracted deed attributes against
+        authoritative registered cadastral records (GAP-04: zero filename heuristics).
         """
-        import re
-        area_val = current_record.get("area_sqft")
-        if area_val is None:
-            area_str = str(current_record.get("area", ""))
-            m = re.search(r"([\d\.]+)", area_str)
-            area_val = float(m.group(1)) if m else 0.0
-        else:
-            try:
-                area_val = float(area_val)
-            except Exception:
-                area_val = 0.0
-
+        area_val = HashService.parse_area_value(current_record.get("area_sqft") or current_record.get("area"))
         current_hash = HashService.compute_canonical_record_hash(current_record)
-        registered_hash = known_registered_hash or "7c3e8f2c9a620d41e7845f096231ba4190284e91240185e2b028941785e091ad"
 
-        s_no = str(current_record.get("survey_number", "")).strip().upper()
-        file_name = str(current_record.get("file_name", "")).upper()
-        v_id = str(current_record.get("verification_id", "")).upper()
         mismatched_fields: List[str] = []
         is_tampered = False
+        registered_hash = "7c3e8f2c9a620d41e7845f096231ba4190284e91240185e2b028941785e091ad"
 
-        if "MOD" in s_no or "TAMPER" in s_no or "TAMPER" in file_name or "MOD" in file_name or "00137" in v_id or "TAMPER" in v_id:
-            if area_val > 0 and area_val != 2400.0:
+        if registered_baseline:
+            expected_area = HashService.parse_area_value(registered_baseline.get("area_sqft"))
+            registered_hash = HashService.compute_canonical_record_hash(registered_baseline)
+
+            # Detect discrepancy in area extent between presented deed and government cadastral record
+            if area_val > 0 and expected_area > 0 and abs(area_val - expected_area) > 0.01:
                 is_tampered = True
-                mismatched_fields.append(f"Area Extent (Claimed: {area_val} sq.ft vs Registered: 2400.0 sq.ft)")
-            elif area_val > 0:
-                is_tampered = True
-                mismatched_fields.append(f"Document Modification Detected (Survey {s_no})")
+                mismatched_fields.append(
+                    f"Area Extent (Claimed: {area_val:,.1f} sq.ft vs Registered: {expected_area:,.1f} sq.ft)"
+                )
 
         return {
             "is_authentic": not is_tampered,
@@ -97,4 +89,5 @@ class HashService:
             "tamper_type": "UNAUTHORIZED_FIELD_MODIFICATION" if is_tampered else "NONE",
             "tamper_severity": "CRITICAL" if is_tampered else "NONE"
         }
+
 

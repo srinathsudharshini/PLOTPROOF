@@ -147,14 +147,33 @@ class OrchestratorService:
                 self.integrity_service.generate_document_integrity(db, doc.id, actor_id=actor_id)
                 integrity_rec = db.scalar(select(IntegrityRecord).where(IntegrityRecord.document_id == doc.id))
 
-            # Authenticity / Tamper check
+            # Authenticity / Tamper check against authoritative cadastral registry (GAP-04)
             from app.services.hash_service import HashService
+            from app.models.deed import Plot
             ocr_fields = list(db.scalars(select(OCRField).where(OCRField.document_id == doc.id)).all())
             field_dict = {f.field_name: f.field_value for f in ocr_fields}
-            field_dict["file_name"] = doc.file_name or ""
-            field_dict["verification_id"] = doc.verification_id or ""
-            tamper_check = HashService.verify_document_integrity(field_dict)
-            is_tampered = bool(getattr(integrity_rec, "is_tampered", False) or tamper_check.get("is_tampered") or "tamper" in (doc.file_name or "").lower())
+
+            s_no = (field_dict.get("survey_number") or "").strip().upper()
+            registered_plot = db.query(Plot).filter(Plot.survey_number == s_no).first() if s_no else None
+            if registered_plot:
+                registered_baseline = {
+                    "survey_number": registered_plot.survey_number,
+                    "area_sqft": registered_plot.area_sqft,
+                    "district": registered_plot.district,
+                    "taluk": registered_plot.taluk,
+                    "village": registered_plot.village,
+                }
+            else:
+                logger.warning(
+                    f"No registered cadastral Plot found for survey '{s_no}'. Cadastral baseline unavailable for verification {verification_id}."
+                )
+                registered_baseline = None
+
+            tamper_check = HashService.verify_document_integrity(
+                current_record=field_dict,
+                registered_baseline=registered_baseline,
+            )
+            is_tampered = bool(tamper_check.get("is_tampered", False))
 
             verif.tamper_detected = is_tampered
             if is_tampered:

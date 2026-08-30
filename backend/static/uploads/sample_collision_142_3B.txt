@@ -1,6 +1,6 @@
-GOVERNMENT OF TAMIL NADU - TITLE DEED OF SALE
+GOVERNMENT OF TAMIL NADU - REGISTRATION DEPARTMENT
+TITLE DEED OF SALE / CONVEYANCE DEED
 Document Registration Number: 5109/2024
-Book 1, Volume 915, Pages 45 to 58
 Sub-Registrar Office: Tambaram
 
 DISTRICT: Chennai
@@ -9,7 +9,7 @@ VILLAGE: Selaiyur Village
 SURVEY NUMBER: 142/3B
 
 EXTENT AND MEASUREMENT OF PROPERTY:
-All that piece and parcel of land bearing Survey No: 142/3B, measuring an area of 2,400 Sq.ft (equivalent to 222.96 Sq.meters).
+All that piece and parcel of land bearing Survey No: 142/3B, measuring an area of 2400 Sq.ft (equivalent to 222.96 Sq.meters).
 
 BOUNDARIES:
 North by: Survey No 142/2
@@ -18,12 +18,9 @@ East by: Survey No 142/5
 West by: Survey No 142/3A
 
 COORDINATES:
-GPS Reference Bounds: 12.9252 N, 80.1476 E to 12.9258 N, 80.1482 E (Overlaps 142/3A)
+GPS Reference Bounds: 12.9252 N, 80.1476 E to 12.9258 N, 80.1482 E
 
 PURCHASER / TITLE HOLDER:
 Name: M. Vijay Anand
-Son/Daughter of: R. Mohan
+Son of: R. Mohan
 Aadhaar UID: 8721-3312-9014
-
-REGISTERED HASH COMMITMENT:
-3b1d7e8a9f33...cadastral-collision

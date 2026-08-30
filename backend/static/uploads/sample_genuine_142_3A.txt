@@ -1,4 +1,5 @@
-GOVERNMENT OF TAMIL NADU - TITLE DEED OF SALE
+GOVERNMENT OF TAMIL NADU - REGISTRATION DEPARTMENT
+TITLE DEED OF SALE / CONVEYANCE DEED
 Document Registration Number: 4821/2024
 Book 1, Volume 912, Pages 101 to 114
 Sub-Registrar Office: Tambaram
@@ -9,7 +10,7 @@ VILLAGE: Selaiyur Village
 SURVEY NUMBER: 142/3A
 
 EXTENT AND MEASUREMENT OF PROPERTY:
-All that piece and parcel of land bearing Survey No: 142/3A, measuring an area of 2,400 Sq.ft (equivalent to 222.96 Sq.meters / 5.5 Cents).
+All that piece and parcel of land bearing Survey No: 142/3A, measuring an area of 2400 Sq.ft (equivalent to 222.96 Sq.meters / 5.5 Cents).
 
 BOUNDARIES:
 North by: Survey No 142/2 (Road 30ft width)
@@ -22,7 +23,7 @@ GPS Reference Bounds: 12.9249 N, 80.1472 E to 12.9255 N, 80.1478 E
 
 PURCHASER / TITLE HOLDER:
 Name: K. S. Ramanathan
-Son/Daughter of: Late K. Sundaram
+Son of: Late K. Sundaram
 Aadhaar UID: 5412-8823-8912
 
 REGISTERED HASH COMMITMENT:

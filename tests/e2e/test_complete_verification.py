@@ -148,14 +148,14 @@ class TestCompleteEndToEndVerification(unittest.TestCase):
                 status=DocumentStatus.PROCESSING,
                 version=1,
                 verification_id=vid,
-                ocr_raw_text="Deed for Encroached Survey 142/3A, Selaiyur, Tambaram, Area 3400 Sq.ft, GPS 12.9252 N, 80.1475 E",
+                ocr_raw_text="Deed for Encroached Survey 142/3B, Selaiyur, Tambaram, Area 2400 Sq.ft, GPS 12.9252 N, 80.1475 E",
             )
             db.add(doc)
             db.commit()
             db.refresh(doc)
 
-            f1 = OCRField(document_id=doc.id, field_name="survey_number", field_value="142/3A", confidence=0.98, status="CONFIRMED")
-            f2 = OCRField(document_id=doc.id, field_name="area", field_value="3400 Sq.ft", confidence=0.96, status="CONFIRMED")
+            f1 = OCRField(document_id=doc.id, field_name="survey_number", field_value="142/3B", confidence=0.98, status="CONFIRMED")
+            f2 = OCRField(document_id=doc.id, field_name="area", field_value="2400 Sq.ft", confidence=0.96, status="CONFIRMED")
             f3 = OCRField(document_id=doc.id, field_name="coordinates", field_value="12.9252, 80.1475", confidence=0.98, status="CONFIRMED")
             db.add_all([f1, f2, f3])
             db.commit()

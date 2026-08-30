@@ -230,6 +230,76 @@ class TestLayer10Security(unittest.TestCase):
         self.assertFalse(limiter.is_allowed(heavy_ip, "/api/v1/documents/1/privacy/prove"))
         print("[PASS] Test 12: Adaptive Rate Limiter Differentiating Standard vs CPU-Heavy Operations Verified")
 
+    def test_13_legacy_review_endpoint_requires_registrar_auth(self):
+        """
+        GAP-02 regression guard: POST /api/verification/{id}/review must require
+        authentication (401 without token) and REGISTRAR/ADMIN role (403 for CITIZEN).
+        Previously this endpoint had no auth and fabricated a fake REGISTRAR actor.
+        """
+        # 1. No credentials at all → 401 Unauthorized
+        res_anon = client.post(
+            "/api/verification/PP-SEC-0001/review",
+            json={"decision": "APPROVE", "notes": "Anonymous approval attempt — must be rejected"},
+        )
+        self.assertEqual(
+            res_anon.status_code, 401,
+            f"Expected 401 for unauthenticated legacy review, got {res_anon.status_code}: {res_anon.text}",
+        )
+
+        # 2. Citizen token → 403 Forbidden (authenticated but wrong role)
+        headers_citizen = {"Authorization": f"Bearer {self.token_a}"}
+        res_citizen = client.post(
+            "/api/verification/PP-SEC-0001/review",
+            json={"decision": "APPROVE", "notes": "Citizen role escalation attempt — must be rejected"},
+            headers=headers_citizen,
+        )
+        self.assertEqual(
+            res_citizen.status_code, 403,
+            f"Expected 403 for citizen role on legacy review, got {res_citizen.status_code}: {res_citizen.text}",
+        )
+
+        print("[PASS] Test 13: Legacy Review Endpoint Auth Guard — 401 (no token) + 403 (CITIZEN) Enforced (GAP-02 fixed)")
+
+    def test_14_http_rate_limiting_on_login(self):
+        """
+        GAP-01 verification: RateLimitMiddleware is active at the HTTP layer.
+        Sending repeated rapid requests to /api/v1/auth/login triggers a 429 Too Many Requests.
+        """
+        from app.middleware.security import rate_limiter
+
+        # Ensure a clean slate for this test
+        rate_limiter.requests.clear()
+
+        # Send requests up to the heavy limit (20)
+        statuses = []
+        for i in range(25):
+            res = client.post(
+                "/api/v1/auth/login",
+                json={"email": "ratelimit_probe@example.com", "password": "WrongPassword123!"},
+            )
+            statuses.append(res.status_code)
+
+        # Confirm earlier requests reached the endpoint (401 invalid credentials)
+        self.assertEqual(statuses[0], 401)
+
+        # Confirm rate limiter kicked in and returned 429
+        self.assertIn(429, statuses)
+        self.assertEqual(statuses[-1], 429)
+
+        # Verify response structure
+        last_res = client.post(
+            "/api/v1/auth/login",
+            json={"email": "ratelimit_probe@example.com", "password": "WrongPassword123!"},
+        )
+        self.assertEqual(last_res.status_code, 429)
+        self.assertEqual(last_res.json().get("code"), "RATE_LIMIT_EXCEEDED")
+        self.assertIn("Retry-After", last_res.headers)
+
+        # Reset rate limiter so other tests continue cleanly
+        rate_limiter.requests.clear()
+
+        print("[PASS] Test 14: HTTP Rate Limiting on Login Endpoint (429 RATE_LIMIT_EXCEEDED) Verified (GAP-01 fixed)")
+
 
 if __name__ == "__main__":
     unittest.main()
