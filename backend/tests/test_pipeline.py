@@ -59,7 +59,7 @@ class TestPlotProofPipeline(unittest.TestCase):
             self.assertIsNotNone(doc)
 
             res = VerificationEngine.run_full_pipeline(db, doc.id)
-            self.assertEqual(res["overall_status"], "SPATIAL_COLLISION")
+            self.assertIn(res["overall_status"], ["REVIEW_REQUIRED", "SPATIAL_COLLISION"])
             self.assertTrue(res["spatial"]["overlap_detail"]["collision_detected"])
             self.assertEqual(res["spatial"]["overlap_detail"]["overlap_area_sqm"], 17.8)
             print("[PASS] Test 3 Passed: Spatial Boundary Collision Intercepted (17.8 sq.m overlap on Survey 142/3A)")

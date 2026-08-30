@@ -56,8 +56,8 @@ class InMemoryRateLimiter:
         # Clean old timestamps
         self.requests[key] = [t for t in self.requests[key] if t > window_start]
 
-        # Heavy endpoints: OCR, ZK prove, large uploads
-        is_heavy = any(h in path for h in ["/privacy/prove", "/ocr", "/upload"])
+        # Heavy / Sensitive endpoints: OCR, ZK prove, large uploads, authentication attempts
+        is_heavy = any(h in path for h in ["/privacy/prove", "/ocr", "/upload", "/auth/login"])
         limit = self.heavy_limit if is_heavy else self.default_limit
 
         if len(self.requests[key]) >= limit:

@@ -18,7 +18,7 @@ from app.api.privacy import router as privacy_router
 from app.api.certificate import router as certificate_router
 from app.api.orchestration import router as orchestration_router
 from app.services.storage_init import ensure_bucket_exists
-from app.middleware.security import SecurityHeadersMiddleware, RequestIDMiddleware
+from app.middleware.security import SecurityHeadersMiddleware, RequestIDMiddleware, RateLimitMiddleware
 
 app = FastAPI(
     title="PlotProof API",
@@ -26,9 +26,10 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Apply Security Headers and Request Tracing (Layer 10)
+# Apply Security Headers, Request Tracing, and Rate Limiting (Layer 10)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RequestIDMiddleware)
+app.add_middleware(RateLimitMiddleware)
 
 # Enable CORS for Next.js Frontend
 app.add_middleware(

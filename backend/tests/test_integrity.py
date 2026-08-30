@@ -329,6 +329,44 @@ class TestLayer6Integrity(unittest.TestCase):
         finally:
             db.close()
 
+    def test_13_neutral_filename_tampered_deed_detected(self):
+        """
+        GAP-04 verification: Tamper detection relies on attribute comparison against the registered
+        cadastral baseline, not filename substring heuristics ('TAMPER', 'MOD', '00137').
+        A deed with an innocent name like 'innocent_title_deed_2026.pdf' claiming 3,400 sq.ft on
+        Survey 142/3A (registered at 2,400 sq.ft) is intercepted as tampered.
+        """
+        from app.services.hash_service import HashService
+
+        claimed_record = {
+            "survey_number": "142/3A",
+            "file_name": "innocent_title_deed_2026.pdf",
+            "verification_id": "PP-9999-88888",
+            "area_sqft": "3,400 Sq.ft",
+            "district": "Chennai",
+            "taluk": "Tambaram",
+            "village": "Selaiyur Village",
+        }
+        cadastral_baseline = {
+            "survey_number": "142/3A",
+            "area_sqft": 2400.0,
+            "district": "Chennai",
+            "taluk": "Tambaram",
+            "village": "Selaiyur",
+        }
+
+        result = HashService.verify_document_integrity(
+            current_record=claimed_record,
+            registered_baseline=cadastral_baseline,
+        )
+
+        self.assertTrue(result["is_tampered"])
+        self.assertFalse(result["is_authentic"])
+        self.assertIn("Area Extent", result["mismatched_fields"][0])
+        self.assertEqual(result["tamper_type"], "UNAUTHORIZED_FIELD_MODIFICATION")
+
+        print("[PASS] Test 13: Neutral-Named Tampered Deed Intercepted via Cadastral Baseline Comparison (GAP-04 verified)")
+
 
 if __name__ == "__main__":
     unittest.main()

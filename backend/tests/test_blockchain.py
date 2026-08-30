@@ -285,6 +285,28 @@ class TestLayer8Blockchain(unittest.TestCase):
         self.assertNotIn("ramanathan", data_str)
         print("[PASS] Test 12: Absolute PII Minimization in Public Blockchain Verification Verified")
 
+    def test_13_missing_blockchain_private_key_raises_error(self):
+        """
+        GAP-05 verification: Missing or empty BLOCKCHAIN_PRIVATE_KEY raises RuntimeError loudly
+        rather than failing silently with hardcoded test fallback.
+        """
+        import os
+        import importlib
+        import app.blockchain.config as bc_config
+
+        old_key = os.environ.get("BLOCKCHAIN_PRIVATE_KEY")
+        try:
+            os.environ["BLOCKCHAIN_PRIVATE_KEY"] = ""
+            with self.assertRaises(RuntimeError) as ctx:
+                importlib.reload(bc_config)
+            self.assertIn("BLOCKCHAIN_PRIVATE_KEY environment variable is required", str(ctx.exception))
+        finally:
+            if old_key is not None:
+                os.environ["BLOCKCHAIN_PRIVATE_KEY"] = old_key
+            importlib.reload(bc_config)
+
+        print("[PASS] Test 13: Missing BLOCKCHAIN_PRIVATE_KEY Raises Startup RuntimeError (GAP-05 verified)")
+
 
 if __name__ == "__main__":
     unittest.main()
