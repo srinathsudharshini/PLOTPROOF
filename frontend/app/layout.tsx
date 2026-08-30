@@ -1,23 +1,8 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { Inter, JetBrains_Mono } from 'next/font/google';
 import { Navbar } from '@/components/Navbar';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { AuthModal } from '@/components/AuthModal';
-
-const inter = Inter({ 
-  subsets: ['latin'], 
-  variable: '--font-inter',
-  display: 'swap',
-  fallback: ['system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif']
-});
-
-const mono = JetBrains_Mono({ 
-  subsets: ['latin'], 
-  variable: '--font-mono',
-  display: 'swap',
-  fallback: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace']
-});
 
 export const metadata: Metadata = {
   title: 'PlotProof — Digital Land Verification Platform',
@@ -30,8 +15,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`dark ${inter.variable} ${mono.variable}`}>
-      <body className="bg-[#0a0f1d] text-slate-100 min-h-screen flex flex-col antialiased selection:bg-emerald-500/30 selection:text-emerald-200">
+    <html lang="en" className="dark">
+      <body className="bg-[#0a0f1d] text-slate-100 min-h-screen flex flex-col antialiased selection:bg-emerald-500/30 selection:text-emerald-200 font-sans">
         <AuthProvider>
           <Navbar />
           <AuthModal />
