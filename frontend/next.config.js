@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
+  // Required for infrastructure/docker/Dockerfile.frontend, which copies
+  // .next/standalone into the production image. Without this, the Docker
+  // build succeeds up to `npm run build` but the COPY step for
+  // .next/standalone fails because Next.js never produces that folder.
+  output: 'standalone',
   images: {
     unoptimized: true,
   },
